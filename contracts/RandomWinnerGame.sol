@@ -55,11 +55,13 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
     event PlayerJoined(uint256 gameId, address player);
 
     // emitted when the game ends
-    event GameEnded(uint256 gameId, address winner, bytes32 requestId);
+    event GameEnded(uint256 gameId, bytes32 requestId);
 
     event EntriesAdded(address participant, uint256 entries);
 
     event UserRegistration(address user);
+
+    event WinnerSelection(address winner, uint256 amountWon);
 
     /**
      * constructor inherits a VRFConsumerBase and initiates the values for keyHash, fee and gameStarted
@@ -138,8 +140,11 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
     // Function to add entries for a participant
     function addEntries(uint256 entries) external {
         require(isUserRegisterd[msg.sender], "User not registered");
-        // require(playerIndex[msg.sender]. != 0, "Has not joined game");
-        // playerIndex[msg.sender].entries += entries;
+        require(gameStarted, "Game has not been started yet");
+        // check user has joined
+        require(playerIndex[msg.sender] != 0, "Has not joined game");
+        // update player entries
+        players[playerIndex[msg.sender]].entries += entries;
         totalEntries += entries;
         emit EntriesAdded(msg.sender, entries);
 
@@ -178,7 +183,49 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
     }
 
     // Callback function used by VRF Coordinator
-    function fulfillRandomness(bytes32, uint256 randomness) internal override {
-        // distributePrizes(randomness);
+    function fulfillRandomness(
+        bytes32 requestId,
+        uint256 randomness
+    ) internal override {
+        distributePrizes(randomness, requestId);
+    }
+
+    function pickWinner(
+        uint256 randomness
+    ) private view returns (uint256[] memory) {
+        uint256[] memory _winners = new uint256[](winners);
+
+        for (uint256 i = 0; i < winners; i++) {
+            uint256 winnerIndex = (uint256(
+                keccak256(abi.encode(randomness, i))
+            ) % totalEntries) + 1;
+            uint256 counter = 0;
+            for (uint256 j = 0; j < players.length; j++) {
+                counter += players[j].entries;
+                if (counter >= winnerIndex) {
+                    _winners[i] = j;
+                    break;
+                }
+            }
+        }
+        return _winners;
+    }
+
+    function distributePrizes(uint256 randomness, bytes32 requestId) private {
+        uint256[] memory _winners = pickWinner(randomness);
+        for (uint256 i = 0; i < _winners.length; i++) {
+            sendTokensToWinner(
+                players[_winners[i]].playerAddy,
+                totalPrizePool / _winners.length
+            );
+            emit WinnerSelection(
+                players[_winners[i]].playerAddy,
+                totalPrizePool / _winners.length
+            );
+        }
+
+        emit GameEnded(gameId, requestId);
+        // set the gameStarted variable to false
+        gameStarted = false;
     }
 }
