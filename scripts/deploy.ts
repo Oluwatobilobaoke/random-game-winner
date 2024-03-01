@@ -21,6 +21,7 @@ async function main() {
   // deploy the contract
   const randomWinnerGame = await ethers.deployContract("RandomGameWinner", [
     initialOwner,
+    erc20Contract.target,
     VRF_COORDINATOR,
     LINK_TOKEN,
     KEY_HASH,
