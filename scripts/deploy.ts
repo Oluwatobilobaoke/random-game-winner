@@ -19,7 +19,7 @@ async function main() {
   console.log(`ERC20 Token contract deployed to ${erc20Contract.target}`);
 
   // deploy the contract
-  const randomWinnerGame = await ethers.deployContract("RandomWinnerGame", [
+  const randomWinnerGame = await ethers.deployContract("RandomGameWinner", [
     initialOwner,
     VRF_COORDINATOR,
     LINK_TOKEN,
@@ -29,18 +29,7 @@ async function main() {
 
   await randomWinnerGame.waitForDeployment();
 
-  // print the address of the deployed contract
-  console.log("Verify Contract Address:", randomWinnerGame.target);
-
-  console.log("Sleeping.....");
-
-  // Wait for etherscan to notice that the contract has been deployed
-  await sleep(30000);
-
-
-  function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+  console.log("RandomGameWinner deployed to:", randomWinnerGame.target);
 }
 
 main().catch((error) => {
