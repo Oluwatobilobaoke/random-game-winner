@@ -93,7 +93,10 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
     /**
      * startGame starts the game by setting appropriate values for all the variables
      */
-    function startGame(uint8 _maxEntries, uint256 _entryFee) external onlyOwner {
+    function startGame(
+        uint8 _maxEntries,
+        uint256 _entryFee
+    ) external onlyOwner {
         // Check if there is a game already running
         require(!gameStarted, "Game is currently running");
 
@@ -128,7 +131,7 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
 
         // If the list is full start the winner selection process
         if (totalEntries >= maxEntries) {
-          getRandomWinners();
+            getRandomWinners();
         }
     }
 
@@ -142,10 +145,9 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
 
         // If the list is full start the winner selection process
         if (totalEntries >= maxEntries) {
-          getRandomWinners();
+            getRandomWinners();
         }
     }
-
 
     /**
      * getRandomWinner is called to start the process of selecting a random winner
@@ -168,7 +170,15 @@ contract RandomGameWinner is VRFConsumerBase, Ownable {
 
     // Send ERC20 tokens to a winner
     function sendTokensToWinner(address player, uint256 amount) internal {
-        require(rewardToken.balanceOf(address(this)) >= amount, "Insufficient Funds");
+        require(
+            rewardToken.balanceOf(address(this)) >= amount,
+            "Insufficient Funds"
+        );
         rewardToken.transfer(player, amount);
+    }
+
+    // Callback function used by VRF Coordinator
+    function fulfillRandomness(bytes32, uint256 randomness) internal override {
+        // distributePrizes(randomness);
     }
 }
